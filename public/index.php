@@ -115,12 +115,8 @@ $app->delete('/student/del/{id}', function (Request $request, Response $response
     $id=$args['id'];
     $sql="DELETE FROM Student
     WHERE id=$id";
-    if ($dbConn->query($sql) === TRUE) {
-        echo "Record deleted successfully";
-      } else {
-        echo "Error deleting record: " . $dbConn->error;
-      }
-
+    $dbConn->query($sql);
+    $response->getBody()->write(json_encode(['message'=>'student deleted with id  '. $id]));
     return $response;
 });
 
