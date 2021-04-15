@@ -143,4 +143,32 @@ $app->post('/student',function(Request $request, Response $response){
     return $response->withHeader("Content-Type", "application/json");
 });
 
+$app->post('/login',function(Request $request, Response $response){
+    $parsedBody = $request->getQueryParams();
+    $email = $parsedBody["email"];
+    $password = $parsedBody["password"];
+    $sql="SELECT * from Login WHERE `email`='$email' and `password`='$password'";
+    //db conn
+    $dbUser="root";      //by default root is user name.  
+    $dbPassword="";     //password is blank by default  
+    try{  
+        $dbConn= new PDO("mysql:host=localhost;dbname=test",$dbUser,$dbPassword);  
+        Echo "Successfully connected with database";  
+    } 
+    catch(Exception $e){  
+    Echo "Connection failed" . $e->getMessage();  
+    } 
+    $count=0;
+    foreach ($dbConn->query($sql) as $row) {
+        $count++;
+    }
+    if($count == 1 && !empty($row)) {
+      $msg="Login succesfull"; 
+    } else {
+      $msg = "Invalid username and password!";
+    }
+    $response->getBody()->write(json_encode(['message'=>$msg]));
+    return $response->withHeader("Content-Type", "application/json");
+});
+
 $app->run();
