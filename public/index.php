@@ -4,31 +4,18 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 
 require __DIR__ . '/../vendor/autoload.php';
-// require __DIR__ . '/../config/db.php';
-
 
 $app = AppFactory::create();
-// require __DIR__ . '/../routes/user.php';
+
 
 $app->addRoutingMiddleware();
-// 
-// $app->addErrorMiddleware(true, true, true);
+$app->addErrorMiddleware(true, true, true);
 
 $app->setBasePath('/app');
 
 $app->get('/', function (Request $request, Response $response, $args) {
-$response->getBody()->write("Hello WOLLLL");
+$response->getBody()->write("Hello WOrld");
 return $response;
-});
-
-$app->get('/recent', function (Request $request, Response $response) {
-    $results = [
-        'id' => '1',
-        'title' => 'Post Title',
-        'body' => 'Post body'
-    ];
-    $response->getBody()->write(json_encode($results));
-    return $response->withHeader("Content-Type", "application/json");
 });
 
 $app->get('/hello/{name}', function (Request $request, Response $response, $args) {
@@ -37,123 +24,179 @@ $app->get('/hello/{name}', function (Request $request, Response $response, $args
     return $response;
 });
 
-$app->get('/student',function(Request $request, Response $response){
-    $dbUser="root";      //by default root is user name.  
-    $dbPassword="";     //password is blank by default  
+$app->get('/users',function(Request $request, Response $response){
+    $dbUser="root";       
+    $dbPassword="";     
     try{  
         $dbConn= new PDO("mysql:host=localhost;dbname=test",$dbUser,$dbPassword);  
-        Echo "Successfully connected with myDB database";  
-    } 
-    catch(Exception $e){  
-    Echo "Connection failed" . $e->getMessage();  
-    }  
-    $query = $dbConn->query('SELECT * FROM student');
-        $results = $query->fetchAll(PDO::FETCH_OBJ);
-        $response->getBody()->write(json_encode($results));
-        return $response->withHeader("Content-Type", "application/json")
-        ->withStatus(200);
-});
-
-$app->get('/student/{id}',function(Request $request, Response $response, $args){
-    $dbUser="root";      //by default root is user name.  
-    $dbPassword="";     //password is blank by default  
-    try{  
-        $dbConn= new PDO("mysql:host=localhost;dbname=test",$dbUser,$dbPassword);  
-        Echo "Successfully connected with myDB database";  
-    } 
-    catch(Exception $e){  
-    Echo "Connection failed" . $e->getMessage();  
-    }  
-    $id= $args['id'];
-    $query = $dbConn->query("SELECT * FROM student WHERE id= $id");
-        $results = $query->fetchAll(PDO::FETCH_OBJ);
-        $response->getBody()->write(json_encode($results));
-        return $response->withHeader("Content-Type", "application/json")
-        ->withStatus(200);
-});
-//ERRORS
-$app->put('/student/update/{id}', function (Request $request, Response $response, $args) {
-    $parsedBody = $request->getQueryParams();
-    $message = 'Name is:' . $parsedBody["name"] .' ';
-    $message .= "Percentage is:". $parsedBody['percentage'] . "";
-    $message .= "Rating is:". $parsedBody['rating'] . "";
-    $message .= "The roll id is: " . $args['id'];
-    $response->getBody()->write($message);
-    $dbUser="root";      //by default root is user name.  
-    $dbPassword="";     //password is blank by default  
-    try{  
-        $dbConn= new PDO("mysql:host=localhost;dbname=test",$dbUser,$dbPassword);  
-        Echo "Successfully connected with myDB database";  
-    } 
-    catch(Exception $e){  
-    Echo "Connection failed" . $e->getMessage();  
-    } 
-    $id=$args['id']; 
-    $name=$parsedBody["name"];
-    $percentage= $parsedBody['percentage'];
-    $rating=$parsedBody['rating'];
-    $sql="UPDATE student SET name='$name',percentage=$percentage,rating=$rating WHERE id=$id";
-    $dbConn->query($sql);
-    $response->getBody()->write(json_encode(['message'=>'student updated  '. $id. $name. $percentage. $rating]));
-    return $response;
-});
-
-$app->delete('/student/del/{id}', function (Request $request, Response $response, $args) {
-    $message = "The object id to delete is: " . $args['id'];
-    $response->getBody()->write($message);
-    //db conn
-    $dbUser="root";      //by default root is user name.  
-    $dbPassword="";     //password is blank by default  
-    try{  
-        $dbConn= new PDO("mysql:host=localhost;dbname=test",$dbUser,$dbPassword);  
-        Echo "Successfully connected with database";  
-    } 
-    catch(Exception $e){  
-    Echo "Connection failed" . $e->getMessage();  
-    } 
-    //sql run
-    $id=$args['id'];
-    $sql="DELETE FROM Student
-    WHERE id=$id";
-    $dbConn->query($sql);
-    $response->getBody()->write(json_encode(['message'=>'student deleted with id  '. $id]));
-    return $response;
-});
-
-$app->post('/student',function(Request $request, Response $response){
-    $parsedBody = $request->getQueryParams();
-    $id = $parsedBody["id"];
-    $name = $parsedBody["name"];
-    $percentage = $parsedBody["percentage"];
-    $rating = $parsedBody["rating"];
-    $sql="INSERT INTO `student` (`id`, `name`, `percentage`, `rating`) VALUES ($id, '$name', $percentage, $rating)";
-    //db conn
-    $dbUser="root";      //by default root is user name.  
-    $dbPassword="";     //password is blank by default  
-    try{  
-        $dbConn= new PDO("mysql:host=localhost;dbname=test",$dbUser,$dbPassword);  
-        Echo "Successfully connected with database";  
-    } 
-    catch(Exception $e){  
-    Echo "Connection failed" . $e->getMessage();  
-    } 
-    $dbConn->query($sql);
+       $qp = $request->getQueryParams();
+       //pagination
+        if ($qp != null){
+            if ($qp['page'] != null){
+                $pg= $qp['page'];
+                $offset = $pg*2-1;
+                $query = $dbConn->query("SELECT * FROM users LIMIT 2 OFFSET $offset ");
+                $results = $query->fetchAll(PDO::FETCH_OBJ);
+                $response->getBody()->write(json_encode($results));
+                return $response->withHeader("Content-Type", "application/json")
+                ->withStatus(200);
+            }
+            else if($qp['search'] != null){
+                $name= $qp['search'];
+                $query = $dbConn->query("SELECT * FROM users WHERE name= '$name'");
+                $results = $query->fetch(PDO::FETCH_OBJ);
+                $response->getBody()->write(json_encode($results));
+                return $response->withHeader("Content-Type", "application/json")
+                ->withStatus(200); 
+            }
+           
     
-    $response->getBody()->write(json_encode(['message'=>'student saved  '. $id. $name. $percentage. $rating]));
-    return $response->withHeader("Content-Type", "application/json");
+        }
+        else{
+            $query = $dbConn->query('SELECT * FROM users');
+            $results = $query->fetchAll(PDO::FETCH_OBJ);
+            $response->getBody()->write(json_encode($results));
+            return $response->withHeader("Content-Type", "application/json")
+            ->withStatus(200);
+        }  
+    } 
+    catch(Exception $e){  
+         $e->getMessage();  
+    }  
+   
+    
+});
+
+$app->get('/users/{id}',function(Request $request, Response $response, $args){
+    $dbUser="root";       
+    $dbPassword="";       
+    try{  
+        $dbConn= new PDO("mysql:host=localhost;dbname=test",$dbUser,$dbPassword);  
+        $id= $args['id'];
+        $query = $dbConn->query("SELECT * FROM users WHERE id= $id");
+            $results = $query->fetch(PDO::FETCH_OBJ);
+            if ($results != null){
+                $response->getBody()->write(json_encode($results));
+            return $response->withHeader("Content-Type", "application/json")
+            ->withStatus(200); 
+            }
+            else{
+                return $response->withHeader("Content-Type", "application/json")
+            ->withStatus(404);
+            }
+            
+    } 
+    catch(Exception $e){  
+        $e->getMessage();  
+    }  
+   
+});
+
+$app->put('/users/{id}', function (Request $request, Response $response, $args) {
+     $qp = $request->getQueryParams();
+    $dbUser="root";        
+    $dbPassword="";      
+    try{  
+        $dbConn= new PDO("mysql:host=localhost;dbname=test",$dbUser,$dbPassword);  
+        $id=$args['id']; 
+        $name=$qp["name"];
+        $email= $qp['email'];
+        $password=$qp['password'];
+        if ($name==null) {
+            throw new InvalidArgumentException('Name should be provided');
+        }
+        if ($email==null) {
+            throw new InvalidArgumentException('Email should provided');
+        }
+        if ($password==null) {
+            throw new InvalidArgumentException('Passwords Should be provided');
+        }
+        $result=$dbConn->query("SELECT Count(*) FROM `users` WHERE id=$id")->fetch();
+        $count=$result[0];
+        if ($count==1){
+            $sql="UPDATE users SET name= '$name',password='$password',email='$email' WHERE id=$id";
+        $dbConn->query($sql);
+        $response->getBody()->write(json_encode($qp));
+        return $response->withHeader("Content-Type", "application/json")
+        ->withStatus(200);
+        }
+        else{
+            $sql="INSERT INTO `users` (`id`,`name`, `email`, `password`) VALUES ('$id','$name', '$email', '$password')";  
+            $dbConn->query($sql);
+            $response->getBody()->write(json_encode($qp));
+            return $response->withHeader("Content-Type", "application/json")->withStatus(201);
+        }
+    } 
+    catch(Exception $e){  
+        echo $e->getMessage();  
+    } 
+        
+});
+
+$app->delete('/users/{id}', function (Request $request, Response $response, $args) {
+    $dbUser="root";       
+    $dbPassword="";      
+    try{  
+        $dbConn= new PDO("mysql:host=localhost;dbname=test",$dbUser,$dbPassword);  
+        $id=$args['id'];
+        $sql="DELETE FROM users
+        WHERE id=$id";
+        $dbConn->query($sql);
+        return $response->withHeader("Content-Type", "application/json")
+        ->withStatus(204);
+    } 
+    catch(Exception $e){  
+    Echo "Connection failed" . $e->getMessage();  
+    } 
+    
+});
+
+$app->post('/users',function(Request $request, Response $response){
+    $gb = json_decode($request->getBody());
+    $name = ($gb->name);
+    $email = ($gb->email);
+    $password = ($gb->password);
+    if ($name==null) {
+        throw new InvalidArgumentException('Name should be provided');
+    }
+    if ($email==null) {
+        throw new InvalidArgumentException('Email should provided');
+    }
+    if ($password==null) {
+        throw new InvalidArgumentException('Passwords Should be provided');
+    }
+    $sql="INSERT INTO `users` (`name`, `email`, `password`) VALUES ('$name', '$email', '$password')";
+    //db conn
+    $dbUser="root";      
+    $dbPassword="";      
+    try{  
+        $dbConn= new PDO("mysql:host=localhost;dbname=test",$dbUser,$dbPassword);  
+        $dbConn->query($sql);
+    return $response->withHeader("Content-Type", "application/json")->withStatus(201);
+ 
+    } 
+    catch(Exception $e){  
+    Echo "Connection failed" . $e->getMessage();  
+    } 
+    
 });
 
 $app->post('/login',function(Request $request, Response $response){
-    $parsedBody = $request->getQueryParams();
-    $email = $parsedBody["email"];
-    $password = $parsedBody["password"];
-    $sql="SELECT * from Login WHERE `email`='$email' and `password`='$password'";
+    $gb = json_decode($request->getBody());
+    $email = ($gb->email);
+    $password = ($gb->password);
+    if ($email==null) {
+        throw new InvalidArgumentException('Email should provided');
+    }
+    if ($password==null) {
+        throw new InvalidArgumentException('Passwords Should be provided');
+    }
+    $sql="SELECT * from users WHERE `email`='$email' and `password`='$password'";
     //db conn
-    $dbUser="root";      //by default root is user name.  
-    $dbPassword="";     //password is blank by default  
+    $dbUser="root";      
+    $dbPassword="";     
     try{  
         $dbConn= new PDO("mysql:host=localhost;dbname=test",$dbUser,$dbPassword);  
-        Echo "Successfully connected with database";  
     } 
     catch(Exception $e){  
     Echo "Connection failed" . $e->getMessage();  
@@ -164,11 +207,13 @@ $app->post('/login',function(Request $request, Response $response){
     }
     if($count == 1 && !empty($row)) {
       $msg="Login succesfull"; 
+      $status=200;
     } else {
       $msg = "Invalid username and password!";
+      $status=404;
     }
-    $response->getBody()->write(json_encode(['message'=>$msg]));
-    return $response->withHeader("Content-Type", "application/json");
+    $response->getBody()->write(json_encode($msg));
+    return $response->withHeader("Content-Type", "application/json")->withStatus($status);
 });
 
 $app->run();
