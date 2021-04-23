@@ -134,7 +134,6 @@ $app->put('/users/{id}', function (Request $request, Response $response, $args) 
 });
 
 $app->delete('/users/{id}', function (Request $request, Response $response, $args) {
-    //db conn
     $dbUser="root";       
     $dbPassword="";      
     try{  
